@@ -1,20 +1,28 @@
 #!/bin/bash
 
-url="moed.gov.sy"
+url="127.0.0.1:8000"
 tempfile='old-result.md5'
 
-while [ true ]; do
-	
+checkchange() {
 	result=$(curl -L -s --insecure $url | md5sum --zero | sed "s/  -//g" 2>/dev/null)
 	
 	if [[ ! -f "$tempfile" ]]; then
 		touch $tempfile
 		echo "$result" > $tempfile
 	elif [[ "$result" == "$(cat $tempfile)" ]]; then
-		printf "%s Hasn\'t changed\n" "$url" 
+		printf "%s Hasn\'t changed\n" "$url"
+
+		notify-send -u low -t 2000 bash-web-monitor "\n$url Hasn't Changed"
+
 	elif [[ "$result" != $(echo $tempfile) ]]; then
 		printf "%s Has Changed\n" "$url"
 		echo $result > $tempfile
+
+		notify-send -u critical bash-web-monitor "\n$url Has Changed"
 	fi
-	sleep 5m
+	sleep 10s
+}
+
+while [ true ]; do
+	checkchange
 done

@@ -7,18 +7,22 @@ usage() {
 	echo -e "Usage: $0 [options] url\n"
 	echo "Options:"
 	echo "  -i interval  set the interval of checks"
+	echo "  -n           send Desktop notifications"
 	echo "  -h           Show this help message"
 	exit 1
 }
 
 
-while getopts ":hi:" opt; do
+while getopts ":hni:" opt; do
 	case ${opt} in
 		h )
 			usage
 			;;
 		i )
 			interval=$OPTARG
+			;;
+		n ) 
+			notify=true
 			;;
 		\? )
 			usage
@@ -50,18 +54,34 @@ checkchange() {
 		touch $tempfile
 		echo "$result" > $tempfile
 	elif [[ "$result" == "$(cat $tempfile)" ]]; then
-		printf "%s Hasn\'t changed\n" "$url"
-
-		notify-send -u low -t 2000 bash-web-monitor "\n$url Hasn't Changed"
-
+		checkresult="$url Hasn't changed"
+		changed=false
 	elif [[ "$result" != $(echo $tempfile) ]]; then
-		printf "%s Has Changed\n" "$url"
+		checkresult="$url Has changed"
+		changed=true
 		echo $result > $tempfile
-
-		notify-send -u critical bash-web-monitor "\n$url Has Changed"
 	fi
+
+	echo -e "$checkresult\n"
+	
+	if [[ $notify ]]; then
+		if [[ $changed == true ]]; then
+			notify-send -u critical bash-web-monitor "\n$checkresult"
+		elif [[ $changed == false ]]; then
+			notify-send -u low -t 2000 bash-web-monitor "\n$checkresult"
+		fi
+	fi
+
 	sleep $interval
 }
+
+close() {
+	echo "removing temporary file"
+	rm $tempfile
+	exit 0
+}
+
+trap close SIGINT SIGTERM
 
 while true; do
 	checkchange

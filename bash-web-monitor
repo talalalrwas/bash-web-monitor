@@ -6,14 +6,15 @@ tempfile='old-result.md5'
 usage() {
 	echo -e "Usage: $0 [options] url\n"
 	echo "Options:"
-	echo "  -i interval  set the interval of checks"
-	echo "  -n           send Desktop notifications"
-	echo "  -h           Show this help message"
+	echo "  -i interval      set the interval of checks(defaults to 30s)"
+	echo "  -d webhook-url   post to the following discord webhook url"
+	echo "  -n               send Desktop notifications"
+	echo "  -h               Show this help message"
 	exit 1
 }
 
 
-while getopts ":hni:" opt; do
+while getopts ":hni:d:" opt; do
 	case ${opt} in
 		h )
 			usage
@@ -23,6 +24,9 @@ while getopts ":hni:" opt; do
 			;;
 		n ) 
 			notify=true
+			;;
+		d )
+			webhookurl=$OPTARG
 			;;
 		\? )
 			usage
@@ -48,7 +52,10 @@ if [[ -z $interval ]]; then
 fi
 
 checkchange() {
-	result=$(curl -L -s --insecure $url | md5sum --zero | sed "s/  -//g" 2>/dev/null)
+	result=$(\
+	curl -L -s --insecure $url \
+	| md5sum --zero \
+	| sed "s/  -//g" 2>/dev/null)
 	
 	if [[ ! -f "$tempfile" ]]; then
 		touch $tempfile
@@ -70,6 +77,11 @@ checkchange() {
 		elif [[ $changed == false ]]; then
 			notify-send -u low -t 2000 bash-web-monitor "\n$checkresult"
 		fi
+	fi
+
+	if [[ -n $webhookurl ]]; then
+		dmessage="{\"content\": \"$checkresult\"}"
+		curl -H "Content-Type: application/json" -d "$dmessage" "$webhookurl"
 	fi
 
 	sleep $interval

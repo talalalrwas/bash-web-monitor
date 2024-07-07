@@ -1,7 +1,47 @@
 #!/bin/bash
 
-url="127.0.0.1:8000"
+# url="127.0.0.1:8000"
 tempfile='old-result.md5'
+
+usage() {
+	echo -e "Usage: $0 [options] url\n"
+	echo "Options:"
+	echo "  -i interval  set the interval of checks"
+	echo "  -h           Show this help message"
+	exit 1
+}
+
+
+while getopts ":hi:" opt; do
+	case ${opt} in
+		h )
+			usage
+			;;
+		i )
+			interval=$OPTARG
+			;;
+		\? )
+			usage
+			;;
+		: )
+			usage
+			;;
+	esac
+done
+
+shift $((OPTIND -1))
+
+if [[ -z "$1" ]]; then
+	echo -e "Error: No url given\n"
+	usage
+	exit 1
+else
+	url=$1
+fi 
+
+if [[ -z $interval ]]; then
+	interval=30
+fi
 
 checkchange() {
 	result=$(curl -L -s --insecure $url | md5sum --zero | sed "s/  -//g" 2>/dev/null)
@@ -20,9 +60,9 @@ checkchange() {
 
 		notify-send -u critical bash-web-monitor "\n$url Has Changed"
 	fi
-	sleep 10s
+	sleep $interval
 }
 
-while [ true ]; do
+while true; do
 	checkchange
 done

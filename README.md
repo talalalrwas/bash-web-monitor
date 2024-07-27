@@ -23,3 +23,4 @@ Options:
  - [ ] make it work with IFTTT and discord webhooks
  - [ ] Handle HTTP error/status codes
  - [ ] Daemoize the script
+ - [ ] make a quick install script/command

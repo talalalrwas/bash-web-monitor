@@ -22,3 +22,4 @@ Options:
  - [x] Desktop notifications
  - [ ] make it work with IFTTT and discord webhooks
  - [ ] Handle HTTP error/status codes
+ - [ ] Daemoize the script
